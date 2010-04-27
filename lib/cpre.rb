@@ -4,3 +4,9 @@ $:.unshift(File.dirname(__FILE__)) unless
 module Cpre
   VERSION = '0.0.1'
 end
+
+class Array
+  def cpre(args)
+    args.partition { |i| }
+  end
+end
