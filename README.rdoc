@@ -1,3 +1,34 @@
+cpre
+  from the utility method
+    args
+      source (not documented)
+      collect
+      sources
+      filters
+
+      collect, source
+      filters, source
+      collect, filters, source
+
+      collect, filters
+      collect, sources
+      filters, sources
+      collect, filters, sources
+    options
+    dsl
+      long way
+      short way
+  from an array
+    comprehend block
+    dsl block
+      long way
+      short way
+  from a hash
+    comprehend block
+    dsl block
+      long way
+      short way
+
 = cpre
 
 * http://github.com/binq/cpre
