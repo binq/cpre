@@ -8,12 +8,14 @@ class Cpre
   def initialize(*args)
     parse_collect = lambda do |a, o|
       o[:collect] ? [{:collect => o.delete(:collect)}, o, a] :
+      a.first.is_a?(Proc) ? [{:collect => a.shift}, o, a] : 
       [{}, o, a] 
     end
 
     parse_sources = lambda do |a, o|
       o[:sources] ? [{:sources => o.delete(:sources)}, o, a] :
       is_all_enums?(a) ? [{:sources => a}, o, []] : 
+
       a.length == 1 && is_all_enums?(a.first) ? [{:sources => a.shift}, o, a] : 
       [{:sources => [a]}, o, []]
     end
