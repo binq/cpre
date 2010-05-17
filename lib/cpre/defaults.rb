@@ -15,8 +15,8 @@ module Cpre::Defaults
     []
   end
 
-  def default_options
-    {}
+  def default_names
+    nil
   end
 end  
 

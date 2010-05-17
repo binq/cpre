@@ -14,25 +14,34 @@ describe Cpre do
   end
 
   it "should work with two enumerables, and a collect" do
-    cpre(lambda { items[0].upcase!; "%s-%u" % items }, %w(a b), [1, 2]).to_a.sort.should ==  ["A-1", "A-2", "B-1", "B-2"]
+    c = cpre(%w(a b), [1, 2]) do
+      set_collect lambda { items[0].upcase!; "%s-%u" % items }
+    end
+    
+    c.to_a.sort.should ==  ["A-1", "A-2", "B-1", "B-2"]
   end
 
   it "should work with two enumerables, a collect and a filter" do
-    filter = lambda do
-      items.inject(0) { |memo, item| memo += item } == 20 && 
-      items.all? { |i| i % 2 == 0 } &&
-      items.inject(:prev => nil, :result => true) do |memo, i|
-        memo[:prev].nil? ? {:prev => i, :result => true} :
-        memo[:result] ? {:prev => i, :result => memo[:prev]+1 < i} : 
-        memo 
-      end[:result]
-    end
-    
-    collect = lambda do
-      items.collect { |item| item.to_s }.join('-')
-    end
+    block = lambda do
+      max = 10
+      lambda do
+        set_collect lambda do
+          items.collect { |item| item.to_s }.join('-')
+        end
 
-    cpre(collect, (0..50), (0..50), (0..50), filter).to_a.should ==  [[2, 3, 5], [3, 5, 7], [5, 7, 11], [7, 11, 13]]
+        add_filter lambda do
+          items.inject(0) { |memo, item| memo += item } == max && 
+          items.all? { |i| i % 2 == 0 } &&
+          items.inject(:prev => nil, :result => true) do |memo, i|
+            memo[:prev].nil? ? {:prev => i, :result => true} :
+            memo[:result] ? {:prev => i, :result => memo[:prev]+1 < i} : 
+            memo 
+          end[:result]
+        end
+      end
+    end.call
+
+    cpre(*Array.new(3) { (0..max) }, &block).to_a.should ==  [[2, 3, 5], [3, 5, 7], [5, 7, 11], [7, 11, 13]]
     # (r = _).enum_for(:each_slice, 10).first.to_a
   end
 

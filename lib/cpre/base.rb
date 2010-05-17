@@ -1,56 +1,24 @@
 class Cpre
-  MAIN_ARGS = %w(collect sources filters)
-  
+  MAIN_ARGS = %w(collect sources filters names)
+
   include Enumerable
   
-  (MAIN_ARGS + [:generators]).each { |i| attr_reader i }
+  MAIN_ARGS.each { |i| attr_reader i }
 
-  def initialize(*args)
-    parse_collect = lambda do |a, o|
-      o[:collect] ? [{:collect => o.delete(:collect)}, o, a] :
-      a.first.is_a?(Proc) ? [{:collect => a.shift}, o, a] : 
-      [{}, o, a] 
-    end
-
-    parse_sources = lambda do |a, o|
-      o[:sources] ? [{:sources => o.delete(:sources)}, o, a] :
-      is_all_enums?(a) ? [{:sources => a}, o, []] : 
-
-      a.length == 1 && is_all_enums?(a.first) ? [{:sources => a.shift}, o, a] : 
-      [{:sources => [a]}, o, []]
-    end
-    
-    parse_filters = lambda do |a, o|
-      o[:filters] ? [{:filters => o.delete(:filters)}, o, a] :
-      a.last.is_a?(Proc) ? [{:filters => [a.pop]}, o, a] : 
-      a.last.is_a?(Array) && a.last.all? { |i| i.is_a?(Proc) } ? [{:filters => a.pop}, o, a] : 
-      [{}, o, a] 
-    end
-    
-    parse_options = lambda do |a, o|
-      a.last.is_a?(Hash) && valid_options?(a.last) ? [{}, o.merge(a.pop), a] : 
-      [{}, o, a] 
-    end
-
-    @collect, @sources, @filters, @options = self.class.scrub_arguments do
-      [parse_options, parse_filters, parse_collect, parse_sources].inject(:args => args, :options => {}, :result => {}) do |memo, p|
-        result, memo[:options], memo[:args] = p.call(*memo.values_at(:args, :options))
-        memo[:result].update(result)
-        memo
-      end[:result].values_at(:collect, :sources, :filters)
-    end
-
-    @generators = @sources.collect { |i| Enumerator.new(i) }
+  def initialize(*args, &block)
+    raise ArgumentError unless args.empty? || args.length == 1 && args.first.is_a?(Hash) && valid_options?(args.first)
+    options = block_given? ? update_options(scrub_options(args.first), &block) : scrub_options(args.first)
+    @collect, @sources, @filters = options.values_at(*MAIN_ARGS.collect { |i| i.to_sym })
   end
   
   def accepted_by_filters?(result)
-    filters.inject(true) do |memo, filter|
-      memo &&= result.instance_eval(&filter)
-    end
+    filters.inject(true) { |memo, filter| memo &&= result.instance_eval(&filter) }
   end
   
   def each
-    return self unless block_given? && generators.length > 0
+    return self unless block_given? && sources.length > 0
+
+    generators = sources.collect { |i| Enumerator.new(i) }
 
     current_list = generators.collect do |generator|
       begin
@@ -84,42 +52,3 @@ class Cpre
     end
   end
 end
-
-
-=begin
-def initialize(*args)
-  #Parse in arguments into instance variables: @collect need to be a proc, 
-  #@sources need to be a Hash of Enumerables, and @filters need to be an
-  #array of procs
-  @collect, @sources, @filters = case args.length
-  when 3
-    #this fits perfectly with what we are looking for
-    args 
-  when 2
-    #If the first argument is a Proc it is must be @collect, and @sources musts be the
-    #next argument.
-    args[0].is_a?(Proc) ? [args[0], args[1], nil] :
-
-    #If the first argument is a Hash it is must be @sources, and @filters musts be the
-    #next argument.
-    args[0].is_a?(Hash) ? [nil, args[0], args[1]] : 
-
-    #If the first argument is a Array of Enumerables it is must be @sources.  It will 
-    #be turned into a Hash using array2hash() and @filters musts be the next argument.
-    is_all_enums?(args[0]) ? [nil, array2hash(args[0]), args[1]] :
-
-    #If the first argument is an Enumerable it is must be @sources.  It will 
-    #be turned into a Hash using array2hash() and @filters musts be the next argument.
-    is_enum?(args[0]) ? [nil, array2hash([args[0]]), args[1]] :
-
-    #At this point all options have been exhausted and nils will be returned.
-    [nil, nil, nil]
-  when 1
-    [nil, args.first, nil]
-  else 
-    [nil, nil, nil]
-  end
-
-  check_arguments
-end
-=end
