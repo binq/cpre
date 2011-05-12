@@ -1,0 +1,29 @@
+How to generate prime numbers with Cpre
+
+-----
+
+Cpre {
+  given :x => 2..Float::INFINITY
+  select { (1..x).select { |i| i != 1 && i != x }.all? { |i| x % i != 0 } }
+  make { x }
+}.first(10)
+
+-----
+
+[2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
+
+-----
+
+Next steps.  Make it work like this:
+
+-----
+
+Cpre {
+  given :x, 2..Float::INFINITY
+  given :y { |x| 1..x }
+  select { |x, y| x % y == 0 }
+  group_by :x
+  select { |x, group| group.length == 2 }
+  collect { |x| x }
+}.first(10)
+

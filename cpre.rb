@@ -14,13 +14,3 @@ class Object
   end
   alias_method :Cpre, :Comprehend
 end
-
-__END__
-
-Cpre {
-  given :x => 2..Float::INFINITY
-  select { (1..x).select { |i| i != 1 && i != x }.all? { |i| x % i != 0 } }
-  make { x }
-}.each { |x|
-  puts x
-}
