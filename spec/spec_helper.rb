@@ -1,1 +1,2 @@
-require File.dirname(__FILE__) + '/../lib/cpre'
+require 'pathname'
+require Pathname(__FILE__).dirname + "../cpre"
