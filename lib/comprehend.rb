@@ -31,11 +31,17 @@ class Comprehend
     new_show =
       case true
       when ->(_) { block_given? && block.arity.zero? }
+        #use block if one is given
         block
+
       when ->(_) { arguments.length == 1 && arguments.first.kind_of?(Comprehend) }
+        #take from comprehension if it is given
         arguments.first.show
+
       when ->(_) { arguments.length == 1 && arguments.first.kind_of?(Proc) && arguments.first.arity.zero? }
+        #use argument if it is a proc
         arguments.first
+
       else
         raise ArgumentError
       end
@@ -44,15 +50,25 @@ class Comprehend
   end
   alias_method :%, :make
 
-  def given(*arguments)
+  def given(*arguments, &predicate)
     new_lists = 
       case true
-      when ->(_) { arguments.first.kind_of?(Comprehend) }
+      when ->(_) { arguments.length == 1 && block_given? && arguments.first.respond_to?(:to_s) }
+        #Merge in a new pair to the hash when a block is given
+        {arguments.first.to_s => predicate}
+
+      when ->(_) { arguments.length == 1 && arguments.first.kind_of?(Comprehend) }
+        #Take lists from the parameter if it is a comprehension
         arguments.first.lists
+
       when ->(_) { arguments.length == 1 && arguments.first.kind_of?(Hash) && arguments.first.values.all? { |v| v.respond_to?(:each) } }
+        #take the the argument if it is a Hash
         arguments.first
+
       when ->(_) { arguments.length == 2 && arguments.first.respond_to?(:to_s) && arguments.last.respond_to?(:each) }
+        #create a pair from the parameters 
         {arguments.first.to_s => arguments.last}
+
       else
         raise ArgumentError, "arguments were: %p" % [arguments]
       end
@@ -65,15 +81,24 @@ class Comprehend
     new_filters = 
       case true
       when ->(_) { block_given? && block.arity.zero? }
+        #use the block if one is given
         [block]
+
       when ->(_) { arguments.length == 1 && arguments.first.kind_of?(Comprehend) }
+        #take filters from first para
         arguments.first.filters
+
       when ->(_) { arguments.all? { |x| x.kind_of?(Proc) } }
+        #take all the arguments if they are Procs
         arguments
+
       when ->(_) { arguments.length == 1 && arguments.first.kind_of?(Array) && arguments.first.all? { |x| x.kind_of?(Proc) } }
+        #take the first argument if it is a proc
         arguments.first
+        
       else
         raise ArgumentError
+
       end
 
     setup_from_options(:make => show, :given => lists, :select => filters + new_filters)
